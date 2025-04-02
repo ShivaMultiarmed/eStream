@@ -123,8 +123,6 @@ typedef unsigned I64T u64;
   (((u64)SWAP32(U32V(v)) << 32) | (u64)SWAP32(U32V(v >> 32)))
 #endif
 
-#include "ecrypt-machine.h"
-
 #define ECRYPT_DEFAULT_WTOW
 
 #ifdef ECRYPT_LITTLE_ENDIAN

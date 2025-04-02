@@ -1,5 +1,6 @@
 
 #include "ecrypt-sync.h"
+#include "ecrypt-portable.h"
 
 /* =====================================================================
  *     The following defines the keystream generation function          
@@ -263,25 +264,8 @@ void ECRYPT_process_bytes(
   {
 	  generate_keystream(ctx, keystream);
 
-      /*for (i = 0; i < 16; ++i)
-	      ((u32*)output)[i] = ((u32*)input)[i] ^ U32TO32_LITTLE(keystream[i]); */
-
-	  ((u32*)output)[0]  = ((u32*)input)[0]  ^ U32TO32_LITTLE(keystream[0]);
-	  ((u32*)output)[1]  = ((u32*)input)[1]  ^ U32TO32_LITTLE(keystream[1]);
-	  ((u32*)output)[2]  = ((u32*)input)[2]  ^ U32TO32_LITTLE(keystream[2]);
-	  ((u32*)output)[3]  = ((u32*)input)[3]  ^ U32TO32_LITTLE(keystream[3]);
-	  ((u32*)output)[4]  = ((u32*)input)[4]  ^ U32TO32_LITTLE(keystream[4]);
-	  ((u32*)output)[5]  = ((u32*)input)[5]  ^ U32TO32_LITTLE(keystream[5]);
-	  ((u32*)output)[6]  = ((u32*)input)[6]  ^ U32TO32_LITTLE(keystream[6]);
-	  ((u32*)output)[7]  = ((u32*)input)[7]  ^ U32TO32_LITTLE(keystream[7]);
-	  ((u32*)output)[8]  = ((u32*)input)[8]  ^ U32TO32_LITTLE(keystream[8]);
-	  ((u32*)output)[9]  = ((u32*)input)[9]  ^ U32TO32_LITTLE(keystream[9]);
-	  ((u32*)output)[10] = ((u32*)input)[10] ^ U32TO32_LITTLE(keystream[10]);
-	  ((u32*)output)[11] = ((u32*)input)[11] ^ U32TO32_LITTLE(keystream[11]);
-	  ((u32*)output)[12] = ((u32*)input)[12] ^ U32TO32_LITTLE(keystream[12]);
-	  ((u32*)output)[13] = ((u32*)input)[13] ^ U32TO32_LITTLE(keystream[13]);
-	  ((u32*)output)[14] = ((u32*)input)[14] ^ U32TO32_LITTLE(keystream[14]);
-	  ((u32*)output)[15] = ((u32*)input)[15] ^ U32TO32_LITTLE(keystream[15]);
+      for (i = 0; i < 16; ++i)
+	      ((u32*)output)[i] = ((u32*)input)[i] ^ U32TO32_LITTLE(keystream[i]); 
   }
 
   if (msglen > 0)
@@ -300,14 +284,15 @@ void ECRYPT_process_bytes(
 
 ECRYPT_ctx ctx;
 
-int main (int argc, char* argv[])
+u8* encrypt(char input[], char k[], char iv[])
   {
   u8 K [16], IV [16], in [100], out [100];
   memset (K, 0, 16);
   memset (IV, 0, 16);
   memset (in, 0, 100);
-  if (argc > 1) for (int i = 0; argv[1][i]; i++) K[i] = argv[1][i];
-  if (argc > 2) for (int i = 0; argv[2][i]; i++) IV[i] = argv[2][i];
+  if (input != NULL) for (int i = 0; input[i]; i++) in[i] = input[i];
+  if (k != NULL) for (int i = 0; k[i]; i++) K[i] = k[i];
+  if (iv != NULL) for (int i = 0; iv[i]; i++) IV[i] = iv[i];
   printf ("K = %s  IV = %s\n", K, IV);
 
   LARGE_INTEGER start, end;
@@ -324,6 +309,26 @@ int main (int argc, char* argv[])
   ECRYPT_encrypt_bytes (&ctx, in, out, 100);
   for (int i = 0; i < 100; i++) printf ("%0x", out[i]);
   printf ("\n");
-  return 0;
+  return out;
   }
+
+int main(int argc, char* argv[]) {
+    if (argc == 1) {
+        encrypt(NULL, NULL, NULL);
+    }
+    else if (argc == 2) {
+        encrypt(argv[1], NULL, NULL);
+    }
+    else if (argc == 3) {
+        encrypt(argv[1], argv[2], NULL);
+    }
+    else {
+        encrypt(argv[1], argv[2], argv[3]);
+    }
+    return 0;
+}
+
+
+// gcc -O2 -Wall -Wextra -I./include -DECRYPT_LITTLE_ENDIAN -o hc128 hc-128.c
+
 
