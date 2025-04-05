@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 			closesocket(clientSocket);
 		}
 
-		printf("Connection is established successfully.");
+		printf("Connection is established successfully.\n");
 		while (true) {
 			char buffer[BUFFER_SIZE] = { 0 };
 			u8 K[KEY_SIZE] = { 0 }, IV[IV_SIZE] = { 0 }, in[BUFFER_SIZE] = { 0 }, out[BUFFER_SIZE] = { 0 };
@@ -53,9 +53,10 @@ int main(int argc, char** argv)
 				continue;
 			}
 			else {
-				printf("Received KEY: %s", buffer);
+				printf("\nReceived KEY:\n");
 				for (int i = 0; i < KEY_SIZE; i++) {
 					K[i] = buffer[i];
+					printf("%0x", K[i]);
 				}
 			}
 			memset(buffer, 0, sizeof(buffer));
@@ -64,9 +65,10 @@ int main(int argc, char** argv)
 				continue;
 			}
 			else {
-				printf("Received IV: %s", buffer);
+				printf("\nReceived IV:\n");
 				for (int i = 0; i < IV_SIZE; i++) {
 					IV[i] = buffer[i];
+					printf("%0x", IV[i]);
 				}
 			 } 
 			memset(buffer, 0, sizeof(buffer));
@@ -74,18 +76,16 @@ int main(int argc, char** argv)
 			for (int i = 0; i < bytesReadCount; i++) {
 				in[i] = buffer[i];
 			}
-			printf("Received data: %s", buffer);
+			printf("\nReceived data: %s\n", buffer);
 			ECRYPT_init();
 			ECRYPT_keysetup(&ctx, K, KEY_SIZE * 8, IV_SIZE * 8);
 			ECRYPT_ivsetup(&ctx, IV);
-			ECRYPT_encrypt_bytes(&ctx, in, out, BUFFER_SIZE);
-
-			char* output = new char[bytesReadCount];
+			ECRYPT_encrypt_bytes(&ctx, in, out, bytesReadCount);
+			send(clientSocket, (char *) &out, bytesReadCount, 0);
+			printf("Proccessed data:\n");
 			for (int i = 0; i < bytesReadCount; i++) {
-				output[i] = out[i];
+				printf("%0x", out[i]);
 			}
-			send(clientSocket, output, bytesReadCount, 0);
-			delete[] output;
 			memset(buffer, 0, sizeof(buffer));
 		}
 	}

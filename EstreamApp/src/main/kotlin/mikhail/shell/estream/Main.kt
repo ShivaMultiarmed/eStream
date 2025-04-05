@@ -11,7 +11,7 @@ import java.security.MessageDigest
 import java.util.*
 import java.util.concurrent.CountDownLatch
 
-@OptIn(DelicateCoroutinesApi::class)
+@OptIn(DelicateCoroutinesApi::class, ExperimentalStdlibApi::class)
 fun main() = runBlocking {
     val latch = CountDownLatch(1)
     val K = BigInteger("43327941536451757547021212229086144792243993750900499115474182045548247479320").toByteArray().hash()
@@ -23,14 +23,30 @@ fun main() = runBlocking {
             val output = socket.openWriteChannel(autoFlush = true)
             launch {
                 while (true) {
-                    val data = readln().encodeToByteArray()
+                    val mode = readln()
+                    val data = when (mode) {
+                        "e" -> readln().encodeToByteArray()
+                        "d" -> readln().hexToByteArray()
+                        else -> {
+                            println("Некорректный режим")
+                            continue
+                        }
+                    }
                     output.writeFully(K, 0, K.size)
                     output.writeFully(IV, 0, IV.size)
                     output.writeFully(data, 0, data.size)
-                    val encryptedData = ByteArray(data.size)
-                    input.readAvailable(encryptedData, 0, encryptedData.size)
-                    val hash = encryptedData.decodeToString()
-                    println(hash)
+                    val receivedData = ByteArray(data.size)
+                    input.readAvailable(receivedData, 0, receivedData.size)
+                    val result =
+                        when (mode) {
+                            "e" -> receivedData.toHexString()
+                            "d" -> receivedData.decodeToString()
+                            else -> {
+                                println("Некорректный режим")
+                                continue
+                            }
+                        }
+                    println(result)
                 }
             }
         } catch (e: Exception) {
