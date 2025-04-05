@@ -1,23 +1,47 @@
-import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.application
-import mikhail.shell.estream.Encryptor
+package mikhail.shell.estream
 
+import io.ktor.network.selector.*
+import io.ktor.network.sockets.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import java.math.BigInteger
+import java.security.MessageDigest
+import java.util.*
+import java.util.concurrent.CountDownLatch
 
-fun main() {
-    val testKey = "test key".toCharArray().toTypedArray()
-    val testInitVector = "test iv".toCharArray().toTypedArray()
-    val testData = "Some secret info".toCharArray().toTypedArray()
-    val hexResult = "c17920e1a4944ab5718fb9aa080f3aadf4491a6ddfb946a3344a5c79d55a7939fc42d9ee6df52d120cf544f61e96aed162cc9d556f46ac62a8cbd360a199a56ff6f695d0a4f7fe2d294f7686fbf5a6569ba409ca785f21f7303fbe72b13d3573f"
-    val encryptor = Encryptor.instance
-    val encryptedData = encryptor.encrypt(testData, testKey, testInitVector)
-    println(encryptedData)
+@OptIn(DelicateCoroutinesApi::class)
+fun main() = runBlocking {
+    val latch = CountDownLatch(1)
+    val K = BigInteger("43327941536451757547021212229086144792243993750900499115474182045548247479320").toByteArray().hash()
+    val IV = BigInteger.probablePrime(1024, Random()).toByteArray().hash()
+    val job = GlobalScope.launch {
+        val socket = aSocket(SelectorManager()).tcp().connect("localhost", 8000)
+        try {
+            val input = socket.openReadChannel()
+            val output = socket.openWriteChannel(autoFlush = true)
+            launch {
+                while (true) {
+                    val data = readln().encodeToByteArray()
+                    output.writeFully(K, 0, K.size)
+                    output.writeFully(IV, 0, IV.size)
+                    output.writeFully(data, 0, data.size)
+                    val encryptedData = ByteArray(data.size)
+                    input.readAvailable(encryptedData, 0, encryptedData.size)
+                    val hash = encryptedData.decodeToString()
+                    println(hash)
+                }
+            }
+        } catch (e: Exception) {
+            println(e.stackTraceToString())
+        }
+    }
+    latch.await()
+}
+
+fun ByteArray.hash(): ByteArray {
+    val md = MessageDigest.getInstance("SHA-256")
+    val hash = md.digest(this)
+    return hash.copyOf(16)
 }
