@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #include <winsock2.h>
 #include <iostream>
+#include <string>
 
 #pragma comment(lib, "ws2_32.lib")
 
-#define PORT 8000
 #define KEY_SIZE 16
 #define IV_SIZE 16
 #define BUFFER_SIZE 1024
@@ -15,6 +15,16 @@
 int main(int argc, char** argv)
 {	
 	ECRYPT_ctx ctx;
+	int PORT;
+	if (argc < 2) {
+		return 1;
+	}
+	else {
+		PORT = std::stoi(argv[1]);
+		if (PORT != 8000 && PORT != 9000) {
+			return 1;
+		}
+	}
 	WSADATA wsaData;
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
 		std::cerr << "WSAStartup failed\n";
