@@ -85,7 +85,10 @@ int main(int argc, char** argv)
 			for (int i = 0; i < bytesReadCount; i++) {
 				in[i] = buffer[i];
 			}
-			printf("\nReceived data: %s\n", buffer);
+			printf("Received data:\n");
+			for (int i = 0; i < bytesReadCount; i++) {
+				printf("%0x", in[i]);
+			}
 			ECRYPT_init();
 			ECRYPT_keysetup(&ctx, K, KEY_SIZE * 8, IV_SIZE * 8);
 			ECRYPT_ivsetup(&ctx, IV);
