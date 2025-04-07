@@ -17,7 +17,7 @@ int main(int argc, char** argv)
 	ECRYPT_ctx ctx;
 	int PORT;
 	if (argc < 2) {
-		return 1;
+		PORT = 8000;
 	}
 	else {
 		PORT = std::stoi(argv[1]);
@@ -47,20 +47,14 @@ int main(int argc, char** argv)
 		if (clientSocket == INVALID_SOCKET) {
 			continue;
 		}
-
-		u_long mode = 1;
-
-		if (ioctlsocket(clientSocket, FIONBIO, &mode) != 0) {
-			closesocket(clientSocket);
-		}
-
 		printf("Connection is established successfully.\n");
 		while (true) {
 			char buffer[BUFFER_SIZE] = { 0 };
 			u8 K[KEY_SIZE] = { 0 }, IV[IV_SIZE] = { 0 }, in[BUFFER_SIZE] = { 0 }, out[BUFFER_SIZE] = { 0 };
 			SSIZE_T bytesReadCount = recv(clientSocket, buffer, KEY_SIZE, 0);
 			if (bytesReadCount < KEY_SIZE) {
-				continue;
+				closesocket(clientSocket);
+				break;
 			}
 			else {
 				printf("\nReceived KEY:\n");
@@ -72,7 +66,8 @@ int main(int argc, char** argv)
 			memset(buffer, 0, sizeof(buffer));
 			bytesReadCount = recv(clientSocket, buffer, IV_SIZE, 0);
 			if (bytesReadCount < IV_SIZE) {
-				continue;
+				closesocket(clientSocket);
+				break;
 			}
 			else {
 				printf("\nReceived IV:\n");
@@ -83,6 +78,10 @@ int main(int argc, char** argv)
 			 } 
 			memset(buffer, 0, sizeof(buffer));
 			bytesReadCount = recv(clientSocket, buffer, BUFFER_SIZE, 0);
+			if (bytesReadCount == 0) {
+				closesocket(clientSocket);
+				break;
+			}
 			for (int i = 0; i < bytesReadCount; i++) {
 				in[i] = buffer[i];
 			}
@@ -98,6 +97,7 @@ int main(int argc, char** argv)
 			}
 			memset(buffer, 0, sizeof(buffer));
 		}
+		printf("\nConnection is closed.\n");
 	}
 	closesocket(serverSocket);
 	WSACleanup();
